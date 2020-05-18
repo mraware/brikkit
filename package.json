@@ -7,6 +7,7 @@
     "contributors": [],
     "dependencies": {
         "cheerio": "^1.0.0-rc.3",
+        "disrequire": "^1.1.0",
         "dotenv": "^8.0.0",
         "moment": "^2.24.0",
         "request": "^2.88.0",

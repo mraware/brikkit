@@ -1,6 +1,7 @@
 const fs = require('fs');
 const { execSync } = require('child_process');
 const path = require('path');
+const disrequire = require('disrequire');
 
 const tmp = require('tmp');
 tmp.setGracefulCleanup();
@@ -8,6 +9,7 @@ tmp.setGracefulCleanup();
 class PluginSystem {
     constructor() {
         this._plugins = {};
+        this._cleanup = [];
     }
     
     getAvailablePlugins() {
@@ -46,17 +48,39 @@ class PluginSystem {
                 pluginNameMap[plugin.name] = plugin;
         });
         
+        this._cleanup.forEach(cleanup => {
+          if (typeof cleanup === 'function')
+            cleanup()
+        });
+        this._cleanup = [];
+        
         Object.values(pluginNameMap).forEach(pluginPath => this.loadPlugin(pluginPath.base));
     }
     
     _loadPluginZip(plugin) {
         const path = tmp.dirSync().name;
         execSync(`unzip ./plugins/${plugin} -d ${path}`);
-        require(`${path}/index.js`);
+        try {
+          disrequire(`${path}/index.js`);
+        } catch(error) {
+          //lol idc
+        }
+        const cleanup = require(`${path}/index.js`);
+        if (cleanup) {
+          this._cleanup.push(cleanup);
+        }
     }
     
     _loadPluginDirectory(plugin) {
-        require(`${process.cwd()}/plugins/${plugin}/index.js`);
+        try {
+          disrequire(`${process.cwd()}/plugins/${plugin}/index.js`);
+        } catch(error) {
+          //lol idc
+        }
+        const cleanup = require(`${process.cwd()}/plugins/${plugin}/index.js`);
+        if (cleanup) {
+          this._cleanup.push(cleanup);
+        }
     }
 }
 
